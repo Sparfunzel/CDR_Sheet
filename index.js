@@ -22,13 +22,14 @@ Array.prototype.dequeue = function () {
   return out;
 };
 
-function addToHistory(editedElem, initialTransform) {
+function addToHistory(editedElem, op, initialTransform) {
   while (editHistory.length >= editMaxUndo) {
     editHistory.dequeue();
   }
 
   editHistory.push({
     elem: editedElem,
+    op: op,
     x: initialTransform.x,
     y: initialTransform.y,
     width: initialTransform.width,
@@ -43,7 +44,18 @@ function undoFromHistory() {
 
   const undoObj = editHistory.pop();
   const editedElem = undoObj.elem;
-  setTransform(editedElem, undoObj);
+
+  switch (undoObj.op) {
+    case 'resize':
+    case 'move':
+      setTransform(editedElem, undoObj);
+      break;
+    case 'delete':
+      appendElemToOverlay(editedElem);
+      break;
+    case 'create':
+      break;
+  }
 }
 
 function setTransform(elem, newTransform) {
@@ -105,12 +117,11 @@ function onMouseMove(ev) {
   if (editModeOn && editedElem !== null) {
     if (!editElemMoved) {
       editElemMoved = true;
-      console.log('adding to history');
-      addToHistory(editedElem, getTransform(editedElem));
+      addToHistory(editedElem.id, editOp, getTransform(editedElem));
     }
 
     if (editOp === 'move') {
-      moveTransform(editedElem, { x: ev.movementX, y: ev.movementY });
+      moveTransform(editedElem.id, { x: ev.movementX, y: ev.movementY });
     }
     if (editOp === 'resize') {
       let xVal = ev.movementX;
@@ -119,7 +130,7 @@ function onMouseMove(ev) {
       if (editedElem instanceof HTMLImageElement) {
         xVal = yVal = ev.movementX + ev.movementY;
       }
-      moveTransform(editedElem, { width: xVal, height: yVal });
+      moveTransform(editedElem.id, { width: xVal, height: yVal });
     }
   }
 }
@@ -133,17 +144,26 @@ function onKeyDown(ev) {
   if (ev.key === 'z' && ev.ctrlKey) {
     undoFromHistory();
   }
+
+  if (editedElem !== null) {
+    if (ev.key === '+' && ev.ctrlKey) {
+      sizeUpFont();
+    }
+    if (ev.key === '-' && ev.ctrlKey) {
+      sizeDownFont();
+    }
+  }
 }
 
 function onElemEdit(ev) {
   if (
-    ev.srcElement instanceof HTMLInputElement ||
-    ev.srcElement instanceof HTMLImageElement
+    ev.target instanceof HTMLInputElement ||
+    ev.target instanceof HTMLImageElement
   ) {
     ev.preventDefault();
     ev.stopPropagation();
   }
-  editedElem = ev.srcElement;
+  editedElem = ev.target;
 
   if (ev.button === 0) {
     editOp = 'move';
@@ -154,8 +174,29 @@ function onElemEdit(ev) {
     ev.stopPropagation();
   }
   if (ev.button === 2) {
+    addToHistory(
+      editedElem.cloneNode(true),
+      'delete',
+      getTransform(editedElem)
+    );
     document.querySelector('.overlay').removeChild(editedElem);
   }
+}
+
+function sizeUpFont() {
+  if (editedElem === null) {
+    return;
+  }
+
+  editedElem.style.fontSize = add(editedElem.style.fontSize, 1);
+}
+
+function sizeDownFont() {
+  if (editedElem === null) {
+    return;
+  }
+
+  editedElem.style.fontSize = add(editedElem.style.fontSize, -1);
 }
 
 function enableEditMode() {
@@ -184,16 +225,37 @@ function disableEditMode() {
   editModeOn = false;
 }
 
-function addNewElem(tagName) {
+function uniqueId() {
+  return (
+    'o_' +
+    Math.floor(Math.random() * Date.now())
+      .toString(16)
+      .substring(0, 10)
+      .padStart(10, '0')
+  );
+}
+
+function createOverlayElem(tagName) {
   const newElem = document.createElement(tagName);
+  newElem.setAttribute('id', uniqueId());
+  return newElem;
+}
+
+function addNewElem(tagName) {
+  const newElem = createOverlayElem(tagName);
   setTransform(newElem, { x: 50, y: 50, width: 80, height: 20 });
   newElem.classList.add('editable');
   if (newElem instanceof HTMLSpanElement) {
     newElem.setAttribute('contenteditable', 'true');
   }
-  newElem.addEventListener('mousedown', onElemEdit);
 
-  document.querySelector('.overlay').appendChild(newElem);
+  appendElemToOverlay(newElem);
+  return newElem.getAttribute('id');
+}
+
+function appendElemToOverlay(elem) {
+  elem.addEventListener('mousedown', onElemEdit);
+  document.querySelector('.overlay').appendChild(elem);
 }
 
 function saveAllOverlays() {
@@ -232,7 +294,7 @@ function loadAllOverlays() {
   document.querySelector('.overlay').innerHTML = '';
 
   allOverlays.forEach((overlayObj) => {
-    const newElem = document.createElement(overlayObj.type);
+    const newElem = createOverlayElem(overlayObj.type);
     setTransform(newElem, overlayObj);
     newElem.className = overlayObj.classes;
 
@@ -257,7 +319,7 @@ function main() {
   document.addEventListener('keydown', onKeyDown);
 
   document.querySelector('input#editmode').addEventListener('change', (ev) => {
-    ev.srcElement.checked ? enableEditMode() : disableEditMode();
+    ev.target.checked ? enableEditMode() : disableEditMode();
   });
 
   document.querySelector('button#newtext').addEventListener('click', (ev) => {
