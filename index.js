@@ -144,7 +144,7 @@ function sizeDownFont(elem) {
 function duplicateElem(elem) {
   const newElem = elem.cloneNode(true);
   newElem.id = uniqueId();
-  setTransform(newElem, { x: 20, y: 20 }, getTransform(newElem));
+  setTransform(newElem, { x: 0, y: 20 }, getTransform(newElem));
   appendElemToOverlay(newElem);
 }
 
