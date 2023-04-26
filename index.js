@@ -2,6 +2,12 @@ let editModeOn = false;
 let editedElem = null;
 let editElemMoved = false;
 let editOp = '';
+let editTransformCoords = {
+  mouseX: 0,
+  mouseY: 0,
+  elemX: 0,
+  elemY: 0,
+};
 let editMaxUndo = 50;
 let editHistory = [];
 
@@ -97,37 +103,24 @@ function undoFromHistory() {
   }
 }
 
-function setTransform(elemObjOrId, newTransform) {
+function setTransform(elemObjOrId, newTransform, initialTransform = {}) {
   const elem = getOverlayElem(elemObjOrId);
 
   if (newTransform.hasOwnProperty('x')) {
-    elem.style.left = addCoord(0, newTransform.x);
+    const init = initialTransform.x || 0;
+    elem.style.left = addCoord(init, newTransform.x);
   }
   if (newTransform.hasOwnProperty('y')) {
-    elem.style.top = addCoord(0, newTransform.y);
+    const init = initialTransform.y || 0;
+    elem.style.top = addCoord(init, newTransform.y);
   }
   if (newTransform.hasOwnProperty('width')) {
-    elem.style.width = addCoord(0, newTransform.width);
+    const init = initialTransform.width || 0;
+    elem.style.width = addCoord(init, newTransform.width);
   }
   if (newTransform.hasOwnProperty('height')) {
-    elem.style.height = addCoord(0, newTransform.height);
-  }
-}
-
-function moveTransform(elemId, deltaTransform) {
-  const elem = getOverlayElem(elemId);
-
-  if (deltaTransform.hasOwnProperty('x')) {
-    elem.style.left = addCoord(elem.style.left, deltaTransform.x);
-  }
-  if (deltaTransform.hasOwnProperty('y')) {
-    elem.style.top = addCoord(elem.style.top, deltaTransform.y);
-  }
-  if (deltaTransform.hasOwnProperty('width')) {
-    elem.style.width = addCoord(elem.style.width, deltaTransform.width);
-  }
-  if (deltaTransform.hasOwnProperty('height')) {
-    elem.style.height = addCoord(elem.style.height, deltaTransform.height);
+    const init = initialTransform.height || 0;
+    elem.style.height = addCoord(init, newTransform.height);
   }
 }
 
@@ -254,17 +247,25 @@ function onMouseMove(ev) {
       addToHistory(editedElem.id, editOp, getTransform(editedElem));
     }
 
+    let deltaX = ev.clientX - editTransformCoords.mouseX;
+    let deltaY = ev.clientY - editTransformCoords.mouseY;
+
     if (editOp === 'move') {
-      moveTransform(editedElem.id, { x: ev.movementX, y: ev.movementY });
+      setTransform(
+        editedElem.id,
+        { x: deltaX, y: deltaY },
+        { x: editTransformCoords.elemX, y: editTransformCoords.elemY }
+      );
     }
     if (editOp === 'resize') {
-      let xVal = ev.movementX;
-      let yVal = ev.movementY;
-
       if (editedElem instanceof HTMLImageElement) {
-        xVal = yVal = ev.movementX + ev.movementY;
+        deltaX = deltaY = deltaX + deltaY;
       }
-      moveTransform(editedElem.id, { width: xVal, height: yVal });
+      setTransform(
+        editedElem.id,
+        { width: deltaX, height: deltaY },
+        { width: editTransformCoords.elemX, height: editTransformCoords.elemY }
+      );
     }
   }
 }
@@ -272,30 +273,6 @@ function onMouseMove(ev) {
 function onMouseUp(ev) {
   editElemMoved = false;
   editedElem = null;
-}
-
-function onKeyDown(ev) {
-  if (!editModeOn) {
-    return;
-  }
-
-  if (ev.key === 'z' && ev.ctrlKey) {
-    undoFromHistory();
-    ev.preventDefault();
-  }
-
-  const activeElem = document.activeElement;
-
-  if (activeElem !== null && activeElem.id.startsWith?.('o_')) {
-    if (ev.key === '+' && ev.altKey) {
-      sizeUpFont(activeElem);
-      ev.preventDefault();
-    }
-    if (ev.key === '-' && ev.altKey) {
-      sizeDownFont(activeElem);
-      ev.preventDefault();
-    }
-  }
 }
 
 function onElemMouseDown(ev) {
@@ -321,15 +298,47 @@ function onElemMouseDown(ev) {
 
   if (ev.button === 0) {
     editOp = 'move';
+    editTransformCoords.mouseX = ev.clientX;
+    editTransformCoords.mouseY = ev.clientY;
+    editTransformCoords.elemX = parseInt(editedElem.style.left) || 0;
+    editTransformCoords.elemY = parseInt(editedElem.style.top) || 0;
   }
   if (ev.button === 1) {
     editOp = 'resize';
+    editTransformCoords.mouseX = ev.clientX;
+    editTransformCoords.mouseY = ev.clientY;
+    editTransformCoords.elemX = parseInt(editedElem.style.width) || 0;
+    editTransformCoords.elemY = parseInt(editedElem.style.height) || 0;
     ev.preventDefault();
     ev.stopPropagation();
   }
   if (ev.button === 2) {
     addToHistory(editedElem.cloneNode(true), 'delete');
     document.querySelector('.overlay').removeChild(editedElem);
+  }
+}
+
+function onKeyDown(ev) {
+  if (!editModeOn) {
+    return;
+  }
+
+  if (ev.key === 'z' && ev.ctrlKey) {
+    undoFromHistory();
+    ev.preventDefault();
+  }
+
+  const activeElem = document.activeElement;
+
+  if (activeElem !== null && activeElem.id.startsWith?.('o_')) {
+    if (ev.key === '+' && ev.altKey) {
+      sizeUpFont(activeElem);
+      ev.preventDefault();
+    }
+    if (ev.key === '-' && ev.altKey) {
+      sizeDownFont(activeElem);
+      ev.preventDefault();
+    }
   }
 }
 
