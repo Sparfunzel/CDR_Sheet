@@ -6,15 +6,17 @@
     <title>Canine - Cyberpunk RED Charakterbogen</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link href="/style.css" rel="stylesheet" type="text/css" />
+    <script src="/content.js"></script>
     <script src="/index.js"></script>
   </head>
   <body>
     <div class="fullscreen">
-      <div>
+      <div class="controls">
         <input type="checkbox" id="editmode" />
         <label for="editmode">Edit Mode</label>
         <button id="newtext" disabled>New Text</button>
         <button id="newinput" disabled>New Input</button>
+        <button id="newtextarea" disabled>New Textarea</button>
         <button id="save">Save</button>
         <input type="checkbox" id="bgtoggle" />
         <label for="bgtoggle">Toggle Background</label>
@@ -23,128 +25,7 @@
         <img
           src="https://raw.githubusercontent.com/Sparfunzel/CDR_Sheet/main/CPR_Sheet_BG2.png"
         />
-        <div class="overlay">
-          <img
-            id="o_bfa01afc08"
-            class=""
-            src="https://raw.githubusercontent.com/Sparfunzel/CDR_Sheet/main/pfp.jpg"
-            style="left: 90px; top: 77px; width: 275px; height: 275px"
-          /><span
-            id="o_268e2d001c"
-            class="title"
-            style="
-              left: 89px;
-              top: 362px;
-              width: 80px;
-              height: 32px;
-              font-size: 21px;
-            "
-            >Handle</span
-          ><span
-            id="o_121a3a65cc"
-            class="title"
-            style="
-              left: 91px;
-              top: 415px;
-              width: 53px;
-              height: 26px;
-              font-size: 20px;
-            "
-            >Rolle</span
-          ><span
-            id="o_a09f346595"
-            class="title"
-            style="
-              left: 91px;
-              top: 473px;
-              width: 65px;
-              height: 38px;
-              font-size: 16px;
-            "
-            >Rollen-<br />Fertigk.</span
-          ><span
-            id="o_46e256cbf0"
-            class=""
-            style="
-              left: 167px;
-              top: 370px;
-              width: 98px;
-              height: 34px;
-              font-size: 27px;
-            "
-            >Canine</span
-          ><span
-            id="o_a1587f56d2"
-            class=""
-            style="
-              left: 146px;
-              top: 424px;
-              width: 127px;
-              height: 30px;
-              font-size: 25px;
-            "
-            >Lawman</span
-          ><span
-            id="o_a8550fa490"
-            class=""
-            style="
-              left: 157px;
-              top: 480px;
-              width: 142px;
-              height: 37px;
-              font-size: 25px;
-            "
-            >Verstärkung</span
-          ><span
-            id="o_40060e3501"
-            class="vertical secondary title"
-            style="
-              left: 290px;
-              top: 485px;
-              width: 36px;
-              height: 12px;
-              font-size: 11px;
-            "
-            >RANG</span
-          ><input
-            id="o_03f775a2f5"
-            class=""
-            style="
-              left: 328px;
-              top: 474px;
-              width: 30px;
-              height: 37px;
-              font-size: 24px;
-            "
-          /><span
-            id="o_d16fca7eab"
-            class=""
-            style="
-              left: 85px;
-              top: 525px;
-              width: 288px;
-              height: 191px;
-              font-size: 12.5px;
-            "
-          >
-            <h2 style="margin: 3px; margin-left: 7px; font-size: 19px">
-              Notizen
-            </h2>
-            <p style="margin-top: 5px; line-height: 1.1">
-              Rang 3 &amp; 4<br />
-              Kampfnummer: 10 - SP: 7 - HP: 25 - BEW/KRA: 5<br />
-              Vier Lokale Streifenpolizisten. Kommen in zwei Autos. Tragen
-              Schwere Pistolen und Kevlar®
-            </p>
-            <p style="line-height: 1.1">
-              Rang 5 - 7<br />
-              Kampfnummer: 14 - SP: 13 - HP: 35 - BEW/KRA: 4<br />Zwei lokale
-              "County Mounties" auf Highway-Patroullie. Kommen in
-              Hochleistungswagen an. Tragen Schwere Pistolen, Sturmgewehre und
-              Heavy Armorjack.
-            </p>
-          </span>
-        </div>
+        <div class="overlay"></div>
       </div>
     </div>
   </body>

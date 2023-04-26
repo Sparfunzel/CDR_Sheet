@@ -141,6 +141,13 @@ function sizeDownFont(elem) {
   elem.style.fontSize = addCoord(elem.style.fontSize, -1);
 }
 
+function duplicateElem(elem) {
+  const newElem = elem.cloneNode(true);
+  newElem.id = uniqueId();
+  setTransform(newElem, { x: 20, y: 20 }, getTransform(newElem));
+  appendElemToOverlay(newElem);
+}
+
 function uniqueId() {
   return (
     'o_' +
@@ -153,13 +160,18 @@ function uniqueId() {
 
 function createOverlayElem(tagName) {
   const newElem = document.createElement(tagName);
-  newElem.setAttribute('id', uniqueId());
+  newElem.id = uniqueId();
   return newElem;
 }
 
 function addNewElem(tagName) {
   const newElem = createOverlayElem(tagName);
-  setTransform(newElem, { x: 50, y: 50, width: 80, height: 20 });
+  setTransform(newElem, {
+    x: 50,
+    y: window.scrollY + 50,
+    width: 80,
+    height: 20,
+  });
   newElem.style.fontSize = '16px';
   if (editModeOn) {
     newElem.classList.add('editable');
@@ -197,7 +209,10 @@ function saveAllOverlays() {
     if (elem instanceof HTMLImageElement) {
       overlayDef.content = elem.src;
     }
-    if (elem instanceof HTMLInputElement) {
+    if (
+      elem instanceof HTMLInputElement ||
+      elem instanceof HTMLTextAreaElement
+    ) {
       overlayDef.content = elem.value;
       setInputValueAsAttrib(elem);
     }
@@ -212,9 +227,9 @@ function saveAllOverlays() {
 }
 
 function loadAllOverlays() {
-  const storageOverlays = localStorage.getItem('overlays');
+  let storageOverlays = localStorage.getItem('overlays');
   if (storageOverlays === null) {
-    return;
+    storageOverlays = SHEET_CONTENT;
   }
 
   const allOverlays = JSON.parse(storageOverlays);
@@ -229,7 +244,10 @@ function loadAllOverlays() {
     if (newElem instanceof HTMLImageElement) {
       newElem.src = overlayObj.content;
     }
-    if (newElem instanceof HTMLInputElement) {
+    if (
+      newElem instanceof HTMLInputElement ||
+      newElem instanceof HTMLTextAreaElement
+    ) {
       newElem.value = overlayObj.content;
     }
     if (newElem instanceof HTMLSpanElement) {
@@ -271,6 +289,10 @@ function onMouseMove(ev) {
 }
 
 function onMouseUp(ev) {
+  if (editedElem) {
+    editedElem.focus();
+  }
+
   editElemMoved = false;
   editedElem = null;
 }
@@ -280,13 +302,6 @@ function onElemMouseDown(ev) {
     return;
   }
 
-  if (
-    ev.target instanceof HTMLInputElement ||
-    ev.target instanceof HTMLImageElement
-  ) {
-    ev.preventDefault();
-    ev.stopPropagation();
-  }
   let targetElem = ev.target;
   while (!targetElem.id) {
     if (targetElem.className === 'overlay') {
@@ -309,13 +324,14 @@ function onElemMouseDown(ev) {
     editTransformCoords.mouseY = ev.clientY;
     editTransformCoords.elemX = parseInt(editedElem.style.width) || 0;
     editTransformCoords.elemY = parseInt(editedElem.style.height) || 0;
-    ev.preventDefault();
-    ev.stopPropagation();
   }
   if (ev.button === 2) {
     addToHistory(editedElem.cloneNode(true), 'delete');
     document.querySelector('.overlay').removeChild(editedElem);
   }
+
+  ev.preventDefault();
+  ev.stopPropagation();
 }
 
 function onKeyDown(ev) {
@@ -339,6 +355,10 @@ function onKeyDown(ev) {
       sizeDownFont(activeElem);
       ev.preventDefault();
     }
+    if (ev.key === 'd' && ev.ctrlKey) {
+      duplicateElem(activeElem);
+      ev.preventDefault();
+    }
   }
 }
 
@@ -353,8 +373,9 @@ function enableEditMode() {
       elem.setAttribute('contenteditable', 'true');
     }
   });
-  document.querySelector('button#newtext').removeAttribute('disabled');
-  document.querySelector('button#newinput').removeAttribute('disabled');
+  document
+    .querySelectorAll('.controls button:not(#save)')
+    .forEach((btn) => btn.removeAttribute('disabled'));
   editModeOn = true;
 }
 
@@ -365,8 +386,9 @@ function disableEditMode() {
       elem.removeAttribute('contenteditable');
     }
   });
-  document.querySelector('button#newtext').setAttribute('disabled', '');
-  document.querySelector('button#newinput').setAttribute('disabled', '');
+  document
+    .querySelectorAll('.controls button:not(#save)')
+    .forEach((btn) => btn.setAttribute('disabled', ''));
   editModeOn = false;
 
   document
@@ -406,6 +428,12 @@ function main() {
     const elemId = addNewElem('input');
     addToHistory(elemId, 'create');
   });
+  document
+    .querySelector('button#newtextarea')
+    .addEventListener('click', (ev) => {
+      const elemId = addNewElem('textarea');
+      addToHistory(elemId, 'create');
+    });
   document.querySelector('button#save').addEventListener('click', (ev) => {
     saveAllOverlays();
   });
